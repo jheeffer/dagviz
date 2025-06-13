@@ -32,6 +32,9 @@
                     nodeGap: [50, 200],
                     flip: undefined,
                     curve: d3.curveMonotoneY,
+                    layering: d3.layeringSimplex(), // d3.layeringLongestPath(), // 
+                    decross: d3.decrossTwoLayer(), // d3.decrossDfs(), // d3.decrossOpt().check("slow"), // 
+                    coord: d3.coordSimplex(), // d3.coordQuad(), // d3.coordGreedy(), //
                     line: undefined,
                     builder: undefined,
                     layout: undefined
@@ -48,25 +51,28 @@
                 currentGraph: "phase1",
                 graphs: new Map([[   
                     "phase1",
-                        {
-                            id: "phase1",   
-                            type: "file",
-                            path: "data/phase1.tsv",
-                            delimiter: "/t",
-                            columns: {
-                                id: "Name",
-                                name: "Name",
-                                formula: "Formula",
-                                uom: "UoM",
-                                source: "Source system",
-                                description: "Description",
-                                status: "Status",
-                                category: "Category"
-                            },
-                            ignore: {
-                                status: ["unused"]
-                            }
+                    {
+                        id: "phase1",   
+                        type: "file",
+                        path: "data/phase1.tsv",
+                        delimiter: "/t",
+                        dag: {
+
+                        },
+                        columns: {
+                            id: "Name",
+                            name: "Name",
+                            formula: "Formula",
+                            uom: "UoM",
+                            source: "Source system",
+                            description: "Description",
+                            status: "Status",
+                            category: "Category"
+                        },
+                        ignore: {
+                            status: ["unused"]
                         }
+                    }
                 ],[
                     "phase2",
                     {
@@ -125,6 +131,9 @@
                     this.dag.line = d3.line().curve(this.dag.curve);
 
                     this.dag.layout = d3.sugiyama()
+                        .layering(this.dag.layering)
+                        .decross(this.dag.decross)
+                        .coord(this.dag.coord)
                         .nodeSize(this.dag.nodeSize)
                         .gap(this.dag.nodeGap)
                         .tweaks([shape]);
@@ -294,7 +303,7 @@
             }
 
             function getDataHash(data) {
-                return [...data.values()].map(d => d.id).sort().join(",");
+                return [...data.values()].map(d => `${d.id}&children=${d.children.map(c => c.id).sort().join(",")}`).sort().join(",");
             }
 
             let drawnGraph;
