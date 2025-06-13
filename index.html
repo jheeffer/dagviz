@@ -298,6 +298,7 @@
             }
 
             let drawnGraph;
+            const color = d3.scaleOrdinal(d3.schemeCategory10);
 
             function drawGraph() {
 
@@ -374,7 +375,6 @@
                 // colors
                 const steps = graph.nnodes() - 1;
                 const interp = d3.interpolateRainbow;
-                const color = d3.scaleOrdinal(d3.schemeCategory10);
                 const colorMap = new Map(
                 [...graph.nodes()]
                     .sort((a, b) => a.y - b.y)
