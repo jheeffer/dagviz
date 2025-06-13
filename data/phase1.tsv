@@ -1,0 +1,157 @@
+Category	Status	Name	Description	Formula	Source system	Testing
+FTE	implemented	fte_offices_collected	The amount of ftes working in offices where data for energy consumption has been collected		SuccessFactors Phase 1	Not tested
+	implemented	fte_total	OX2 workforce measured in full time equivalents (base level is country)		SuccessFactors Phase 1	Not tested
+Electricity - Office + Company Car	implemented	electricity_consumption_collected_re	Electricity consumption in offices with renewable energy contracts (proof needed)		Data from energy invoices	
+	implemented	electricity_consumption_collected_ss	Electricity consumption in offices without renewable energy contracts where a supplier-specific emission intensity figure (gCO2e/kWh) can be provided (proof needed)		Data from energy invoices	
+	implemented	electricity_consumption_collected_rgrid	Electricity consumption in offices without renewable energy contracts		Data from energy invoices	
+	implemented	electricity_consumption_collected	The amount of electricity consumption which is collected from OX2 offices as either renewable, supplier-specific emission factor or residual grid	electricity_consumption_collected_re + electricity_consumption_collected_ss + electricity_consumption_collected_rgrid		
+	implemented	electricity_consumption_per_fte	Consumption of electricity per FTE (with global as proxy if country has no consumption, but does have FTE)	"if office consumption => electricity_consumption_collected:country / fte_offices_collected:country
+if no office consumption for electricty ór HC =>electricity_consumption_collected:global / fte_offices_collected:global"		
+	implemented	electricity_consumption_total_office	Electricity consumption in offices	fte_total * electricity_consumption_per_fte		
+	implemented	electricity_consumption_total	Electricity consumption in offices	electricity_consumption_total_office + cc_energy_consumption_electricity		
+	implemented	electricity_consumption_extrapolated	Amount of electricity consumption that is extrapolated	electricity_consumption_total - electricity_consumption_collected		
+	implemented	electricity_re_ghg_intensity	ghg emission intensity for renewable  electricity		Data from energy invoices	
+	implemented	electricity_ss_ghg_intensity	Supplier-specific ghg emission intensity for electricity		Data from energy invoices	
+	implemented	electricity_rgrid_ghg_intensity	ghg emission intensity for the residual grid in respective market		AIB - European Residual Mix + Australia (manual look-up)	
+	implemented	electricity_grid_ghg_intensity	ghg emission intensity for the grid in respective market (electricity production)		AIB - European Residual Mix + Australia (manual look-up)	
+	implemented	electricity_ss_share_re	supplier-specific share of electricity deriving from renewable energy sources		Data from energy invoices	
+	implemented	electricity_rgrid_share_re	Share of electricity deriving from renewable energy sources in the residual grid		AIB - European Residual Mix + Australia (manual look-up)	
+	implemented	electricity_ss_share_coal	supplier-specific share of electricity deriving from coal		Data from energy invoices	
+	implemented	electricity_rgrid_share_coal	Share of electricity deriving from coal in the residual grid		AIB - European Residual Mix + Australia (manual look-up)	
+	implemented	electricity_ss_share_oil	supplier-specific share of electricity deriving from oil		Data from energy invoices	
+	implemented	electricity_rgrid_share_oil	Share of electricity deriving from oil in the residual grid		AIB - European Residual Mix + Australia (manual look-up)	
+	implemented	electricity_ss_share_gas	supplier-specific share of electricity deriving from gas		Data from energy invoices	
+	implemented	electricity_rgrid_share_gas	Share of electricity deriving from gas in the residual grid		AIB - European Residual Mix + Australia (manual look-up)	
+	implemented	electricity_ss_share_otherfossil	supplier-specific share of electricity deriving from other fossil sources or undefined fossil sources		Data from energy invoices	
+	implemented	electricity_rgrid_share_otherfossil	Share of electricity deriving from other fossil sources or undefined fossil sources in the residual grid		AIB - European Residual Mix + Australia (manual look-up)	
+	implemented	electricity_ss_share_nuclear	supplier-specific share of electricity deriving from nuclear		Data from energy invoices	
+	implemented	electricity_rgrid_share_nuclear	Share of electricity deriving from nuclear in the residual grid		AIB - European Residual Mix + Australia (manual look-up)	
+	implemented	electricity_ss_share_other	supplier-specific share of electricity deriving from other sources		Data from energy invoices	
+	implemented	electricity_rgrid_share_other	Share of electricity deriving from other sources in the residual grid		AIB - European Residual Mix + Australia (manual look-up)	
+	unused	share_re_electricity	share of electricity consumed in OX2 offices from renewable sources	(electricity_consumption_collected_re + electricity_consumption_collected_ss * electricity_ss_share_re + electricity_consumption_collected_rgrid * electricity_rgrid_share_re ) / electricity_consumption_collected		
+Heating & cooling - Office	implemented	hc_consumption_re	Energy consumption from district heating and/or cooling from renewable energy contract (proof needed)		Data from energy invoices	
+	implemented	hc_consumption_ss	Energy consumption from district heating and/or cooling with supplier-specific emission factor (proof needed)		Data from energy invoices	
+	implemented	hc_consumption_rgrid	Energy consumption from district heating and/or cooling (residual grid)		Data from energy invoices	
+	implemented	hc_consumption_collected	Energy consumption for heating and cooling that is collected, either from undefined energy contracts, or re contracts or contracts which provide supplier-specific information. 	hc_consumption_re + hc_consumption_ss + hc_consumption_rgrid		
+	implemented	hc_consumption_per_fte	Consumption of heating/cooling per FTE	"if office consumption => hc_consumption_collected:country / fte_offices_collected:country
+if no office consumption for either electricity or HC => hc_consumption_collected:global / fte_offices_collected:global"		
+	implemented	hc_consumption_total	Electricity consumption in offices	fte_total * hc_consumption_per_fte		
+	implemented	hc_consumption_extrapolated	Amount of electricity consumption that is extrapolated	hc_consumption_total - hc_consumption_collected		
+	implemented	hc_re_ghg_intensity	ghg emission intensity for renewable heating and cooling (proof needed)		Data from energy invoices	
+	implemented	hc_ss_ghg_intensity	Supplier-specific ghg emission intensity for heating and cooling (proof needed)		Data from energy invoices	
+	implemented	hc_rgrid_ghg_intensity	ghg emission intensity for the residual heating and cooling grid for respective office		Data from energy invoices	
+	implemented	hc_ss_share_re	share of district heating and/or cooling deriving from renewable energy sources		Data from energy invoices	
+	implemented	hc_ss_share_coal	share of district heating and/or cooling deriving from coal		Data from energy invoices	
+	implemented	hc_ss_share_oil	share of district heating and/or cooling deriving from oil		Data from energy invoices	
+	implemented	hc_ss_share_gas	share of district heating and/or cooling deriving from gas		Data from energy invoices	
+	implemented	hc_ss_share_otherfossil	share of district heating and/or cooling deriving from other fossil sources or undefined fossil sources		Data from energy invoices	
+	implemented	hc_ss_share_nuclear	share of district heating and/or cooling deriving from nuclear		Data from energy invoices	
+	implemented	hc_ss_share_other	share of district heating and/or cooling deriving from unknown or other sources (e.g., sewage and sea)		Data from energy invoices	
+	implemented	hc_rgrid_share_re	share of district heating and/or cooling deriving from renewable energy sources (residual grid - no specified choise in energy contract)		Data from energy invoices	
+	implemented	hc_rgrid_share_coal	share of district heating and/or cooling deriving from coal (residual grid - no specified choise in energy contract)		Data from energy invoices	
+	implemented	hc_rgrid_share_oil	share of district heating and/or cooling deriving from oil (residual grid - no specified choise in energy contract)		Data from energy invoices	
+	implemented	hc_rgrid_share_gas	share of district heating and/or cooling deriving from gas (residual grid - no specified choise in energy contract)		Data from energy invoices	
+	implemented	hc_rgrid_share_otherfossil	share of district heating and/or cooling deriving from other fossil sources or undefined fossil sources (residual grid - no specified choise in energy contract)		Data from energy invoices	
+	implemented	hc_rgrid_share_nuclear	share of district heating and/or cooling deriving from nuclear (residual grid - no specified choise in energy contract)		Data from energy invoices	
+	implemented	hc_rgrid_share_other	share of district heating and/or cooling deriving from other sources such as seawater and sewage (residual grid - no specified choise in energy contract)		Data from energy invoices	
+Company car	unused	cc_distance_petrol	Distance driven with company car (petrol)		Data from vehicle leasing company or employee driving company car	N/A
+	unused	cc_distance_diesel	Distance driven with company car (diesel)		Data from vehicle leasing company or employee driving company car	N/A
+	unused	cc_distance_EV	Distance driven with company car (EV)		Data from vehicle leasing company or employee driving company car	N/A
+	unused	cc_distance_hybrid				N/A
+	unused	cc_kWhintensity_EV	electricity intensity of company car (EV)		Data from vehicle leasing company or employee driving company car	N/A
+	implemented	cc_liters	consumed liters of petrol or diesel		Data from vehicle leasing company or employee driving company car	Testing complete
+	implemented	cc_kwh	kwh consumed by company cars 			Testing complete
+	implemented	cc_kwh_reduction_office_charging	The % reduction of kwh EV usage due to charging at office (preventing double counting)			Testing complete
+	not used	cc_ghgintensity	greenhouse gas intensity of company cars fuel		Data from vehicle leasing company or employee driving company car	
+	implemented	fuel_to_energy	conversion litres of fuel to energy		DEFRA_fuel properties	Testing complete
+	implemented	cc_energy_consumption_oil	energy consumption from company cars from oil-based fuel (petrol and diesel)	"1/1000*sum(cc_liters*fuel_to_energy)
+"		Testing complete
+	implemented	cc_energy_consumption_electricity	electricity consumption in company Evs	1/1000 * cc_kwh * (1 - cc_kwh_reduction_office_charging)		Testing complete
+e1-5 Energy use	implemented	total_renewable_energy	Total amount of renewable energy consumed by OX2 through energy consumption in offices (electricity and heating and cooling) 	1/1000 * (electricity_consumption_total / electricity_consumption_collected * (electricity_consumption_collected_re + electricity_consumption_collected_ss * electricity_ss_share_re  + electricity_consumption_collected_rgrid * electricity_rgrid_share_re ) +( hc_consumption_re + hc_consumption_total:SupplierSpecific * hc_ss_share_re + hc_consumption_total:Residual * hc_rgrid_share_re))		
+	implemented	total_fossil_energy	Total amount of fossil energy consumed by OX2 through energy consumption in offices (electricity and heating and cooling) and for company cars	total_coal_energy + total_gas_energy + total_gas_energy + total_oil_energy + total_otherfossil_energy		
+	implemented	total_coal_energy	Total energy consumption in offices (electricity and heating and cooling) deriving from coal 	1/1000 * ( electricity_consumption_total / electricity_consumption_collected * ( electricity_consumption_collected_ss * electricity_ss_share_coal + electricity_consumption_collected_rgrid * electricity_rgrid_share_coal) + ( hc_consumption_total:SupplierSpecific * hc_ss_share_coal + hc_consumption_total:Residual * hc_rgrid_share_coal))		
+	implemented	total_gas_energy	Total energy consumption in offices (electricity and heating and cooling) deriving from gas	1/1000 *( electricity_consumption_total / electricity_consumption_collected*  ( electricity_consumption_collected_ss * electricity_ss_share_gas + electricity_consumption_collected_rgrid * electricity_rgrid_share_gas) + ( hc_consumption_total:SupplierSpecific * hc_ss_share_gas + hc_consumption_total:Residual * hc_rgrid_share_gas))		
+	implemented	total_oil_energy	Total energy consumption in offices (electricity and heating and cooling) deriving from oil and company cars	1/1000 *( electricity_consumption_total / electricity_consumption_collected  ( electricity_consumption_collected_ss * electricity_ss_share_oil + electricity_consumption_collected_rgrid * electricity_rgrid_share_oil )+ ( hc_consumption_total:SupplierSpecific * hc_ss_share_oil + hc_consumption_total:Residual * hc_rgrid_share_oil)) +cc_energy_consumption_oil		
+	implemented	total_otherfossil_energy	Total energy consumption in offices (electricity and heating and cooling) deriving from other fossil energy	1/1000 *( electricity_consumption_total / electricity_consumption_collected  ( electricity_consumption_collected_ss * electricity_ss_share_otherfossil + electricity_consumption_collected_rgrid * electricity_rgrid_share_otherfossil ) + ( hc_consumption_total:SupplierSpecific * hc_ss_share_otherfossil + hc_consumption_total:Residual * hc_rgrid_share_otherfossil))		
+	implemented	total_nuclear_energy	Total energy consumption in offices (electricity and heating and cooling) deriving from nuclear	1/1000 *( electricity_consumption_total / electricity_consumption_collected * ( electricity_consumption_collected_ss * electricity_ss_share_nuclear + electricity_consumption_collected_rgrid * electricity_rgrid_share_nuclear ) + ( hc_consumption_total:SupplierSpecific * hc_ss_share_nuclear + hc_consumption_total:Residual * hc_rgrid_share_nuclear))		
+	implemented	total_other_energy	Total energy consumption in offices (electricity and heating and cooling) deriving from other sources (e.g., sea water and sewage) and unknown sources and electricity consumed in company EVs	1/1000 *( electricity_consumption_total / electricity_consumption_collected * ( electricity_consumption_collected_ss * electricity_ss_share_other + electricity_consumption_collected_rgrid * electricity_rgrid_share_other) + ( hc_consumption_total:SupplierSpecific * hc_ss_share_other + hc_consumption_total:Residual * hc_rgrid_share_other)) 		
+	implemented	total_energy	Total energy consumption in offices and company cars 	"total_renewable_energy + 
+total_fossil_energy + 
+total_nuclear_energy + 
+total_other_energy"		
+	implemented	share_re_energy	Share of renewable energy consumed by OX2 (energy consumption in offices and company cars)	total_renewable_energy / total_energy		
+scope 1	implemented	ghg_scope_1_calc	"GHG emissions from company cars whose car providers provide activity data (distance and GHG intensity (gCO2e/kWh)).
+
+In 2024, this is the case for Åland, Romania and Poland. "	1/000 * (cc_liters * cc_ghgintensity)		Testing complete
+	unused	ghg_scope_1_input	"GHG emissions from company cars whose car providers provide GHG data.
+
+In 2024, this is the case for Sweden."	[no calculation - only conversion from kgCO2e to tCO2e]		Testing complete
+	implemented	ghg_scope_1	GHG emissions for scope 1	ghg_scope_1_calc		Testing complete
+scope 2	implemented	ghg_scope_2_lb	GHG emissions from energy consumption in offices (location-based)	ghg_scope_2_lb_electricity + ghg_scope_2_lb_hc		
+	implemented	ghg_scope_2_lb_electricity	GHG emissions from electricity consumption in offices (location-based)	1/1000 * 1/1000 *(electricity_consumption_total) * electricity_grid_ghg_intensity		
+	implemented	ghg_scope_2_lb_hc	GHG emissions from heating and cooling in offices (location-based)	1/1000 * 1/1000 *(hc_consumption_total * hc_rgrid_ghg_intensity)		
+	implemented	ghg_scope_2_mb	GHG emissions from energy consumption in offices (market-based)	ghg_scope_2_mb_electricity+ghg_scope_2_mb_hc		
+	implemented	ghg_scope_2_mb_electricity	GHG emissions from electricity consumption in offices (market-based)	"1/1000 * 1/1000 *(electricity_consumption_collected_re * electricity_re_ghg_intensity + 
+electricity_consumption_collected_ss * electricity_ss_ghg_intensity +
+electricity_consumption_collected_rgrid * electricity_rgrid_ghg_intensity + 
+electricity_consumption_extrapolated * electricity_rgrid_ghg_intensity)"		
+	implemented	ghg_scope_2_mb_hc	GHG emissions from heating and cooling in offices (market-based)	"1/1000 * 1/1000 * (hc_consumption_re * hc_re_ghg_intensity +
+hc_consumption_ss * hc_ss_ghg_intensity + 
+hc_consumption_rgrid * hc_rgrid_ghg_intensity + 
+hc_consumption_extrapolated * hc_rgrid_ghg_intensity)"		
+s3 cat 3 - Upstream fuel/energy	implemented	wtt_td_losses_electricity	Standard value for GHG emissions arising from T&D losses in electricity (exclude renewables)		DEFRA_T&D losses	Testing complete
+	implemented	ghg_scope_3_cat_3_electricity	GHG emissions from fuel- and energy-related activities (electricity)	1/1000 * 1/1000 * (electricity_consumption_total * wtt_td_losses_electricity)		Testing complete
+	implemented	wtt_td_losses_hc	Standard value for GHG emissions arising from T&D losses in district heating/cooling (exclude renewables)		Energiföretagen upstream H&C	Testing complete
+	implemented	ghg_scope_3_cat_3_hc	GHG emissions from fuel- and energy-related activities (heating and cooling)	1/1000 * 1/1000 * (hc_consumption_total * wtt_td_losses_hc)		Testing complete
+	implemented	wtt_petrol	well-to-tank factor for petrol		DEFRA_WTT fuels	Testing complete
+	implemented	wtt_diesel	well-to-tank factor for diesel		DEFRA_WTT fuels	Testing complete
+	implemented	ghg_scope_3_cat_3_cc	GHG emissions from fuel- and energy-related activities (company cars)	"cc_liters:petrol*wtt_petrol +
+cc_liters:diesel*wtt_diesel"		
+	implemented	ghg_scope_3_cat_3	GHG emissions from fuel and energy-related activities for energy consumption in offices and company cars. 	ghg_scope_3_cat_3_electricity + ghg_scope_3_cat_3_hc + ghg_scope_3_cat_3_cc		
+s3 cat 5 - Office waste	implemented	ghg_scope_3_cat_5	GHG emissions from managing waste generated in our offices	ghg_office_waste_recycling + ghg_office_waste_compost + ghg_office_waste_combustion + ghg_office_waste_landfill		Testing complete
+	implemented	ghg_office_waste_recycling	GHG emissions from recycling office waste (compost is included)	standard_value_waste_amount * fte_total[country] * share_office_waste_recycling *  ef_office_waste_recycling		Testing complete
+	implemented	ghg_office_waste_combustion	GHG emissions from combustion of office waste 	standard_value_waste_amount * fte_total[country]  * share_office_waste_combustion *  ef_office_waste_combustion		Testing complete
+	implemented	ghg_office_waste_landfill	GHG emissions from landfill of office waste 	standard_value_waste_amount * fte_total[country]  * share_office_waste_landfill * ef_office_waste_landfill		Testing complete
+	implemented	ef_office_waste_recycling				Testing complete
+	implemented	ef_office_waste_combustion				Testing complete
+	implemented	ef_office_waste_landfill				Testing complete
+	implemented	share_office_waste_recycling	Share of waste that is recycled and compostes (overall recycling rate or overall recycling and compose rate)		European Environmental Agency + Circular Australia	Testing complete
+	implemented	share_office_waste_combustion	Share of waste that is combusted		Calculated from EEA + Circular Australia	Testing complete
+	implemented	share_office_waste_landfill	Share of waste that goes to landfill		European Environmental Agency + Australian Bureau of Statistics	Testing complete
+	implemented	standard_value_waste_amount	Standard value for how much waste is generated per fte in a year		OX2 Internal calculations	Testing complete
+s3 cat 6 - Business Travel	implemented	ghg_scope_3_cat_6	GHG emissions arising through business travel	ghg_air + ghg_train + ghg_privately_owned_vehicles + ghg_taxi + ghg_public_transport + ghg_marine_travel + ghg_rental_total + ghg_taxi_travel		
+	implemented	ghg_business_travel_per_FTE	GHG emissions arising through business travel per FTE	ghg_scope_3_cat_6 / fte_total		
+Air Travel	implemented	ghg_air	GHG emissions from business travel by air	travel_agency_direct_input + expenses_spend_air * air_kgco2e_per_sek		Testing complete
+	implemented	air_kgco2e_per_sek	Calculated emission factor based on values provided by the travel agency BCD	travel_agency_direct_input / travel_agency_spend_air		Testing complete
+	implemented	expenses_spend_air	Spend on air travel collected through the expense system Rydoo		Rydoo	Testing complete
+	implemented	travel_agency_spend_air	Spend on air travel provided by the travel agency BCD		BCD	Testing complete
+	implemented	travel_agency_direct_input	GHG arising from air travel provided by the travel agency BCD		BCD	Testing complete
+Train Travel	implemented	ghg_train	GHG emissions from business travel by train	travel_agency_distance_train * train_kgco2e_km + expenses_spend_train * train_kgco2e_sek		Testing complete
+	implemented	expenses_spend_train	Spend on train travel through expenses		Rydoo	Testing complete
+	implemented	travel_agency_spend_train	GHG emissions from business travel by train		BCD	Testing complete
+	implemented	travel_agency_distance_train	GHG emissions from business travel by train		BCD	Testing complete
+	implemented	train_kgco2e_sek	Emission factor for train	travel_agency_distance_train * train_kgco2e_km / travel_agency_spend_train		Testing complete
+	implemented	train_kgco2e_km	Emission factor for train for Sweden (all trains booked via travel agency BCD)		SJ	Testing complete
+Private Vehicles Travel	implemented	ghg_privately_owned_vehicles	GHG emissions from business travel by privately owned vehicles	1/1000 * ( distance_privately_owned_vehicles_EV*0 +distance_privately_owned_vehicles * emission intensity average (5, 15, 25 ... 215)		Testing ongoing - diffs found
+	implemented	distance_privately_owned_vehicles_EV	Travelled distance using privately owned electrical vehicles		Rydoo	
+	implemented	distance_privately_owned_vehicles	Travelled distance using privately owned vehicles with 0 to 10, 10-20, 20-30 ... 210-220 gCO2e/km		Rydoo	
+Taxi	implemented	ghg_taxi_travel	GHG emissions from business travel by taxi	sum(expenses_spend_taxi*taxi_kgco2e_sek)		Testing complete
+	implemented	expenses_spend_taxi	Spend on taxis		Rydoo	Testing complete
+	implemented	taxi_kgco2e_sek	Emission factor for taxis		New Zealand Government - regular taxi 	Testing complete
+Public Transport	implemented	ghg_public_transport	GHG emissions from business travel by public transport	expenses_spend_public_transport * public_transport_kgco2e_sek		Testing complete
+	implemented	expenses_spend_public_transport	Spend on public transport through expenses ('the category 'Bus')		Rydoo	Testing complete
+	implemented	public_transport_kgco2e_sek	Emission factor for public transport		US EPA	Testing complete
+Marine Travel	implemented	ghg_marine_travel	GHG emissions from business travel by marine modes of travel	sum(expenses_spend_marine_travel*marine_travel_kgco2e_sek)		Testing complete
+	implemented	expenses_spend_marine_travel	Spend on marine travel  through expenses (part of the category 'Other travel expenses (ferry, customs fee etc.)'		Rydoo	Testing complete
+	implemented	marine_travel_kgco2e_sek	Emission factor for marine travel		Market Economics Limited	Testing complete
+Rental car travel	implemented	ghg_rental_total	Total GHG emissions from business travel by rental car	ghg_travel_agency_spend_input + ghg_expense_spend_input		Testing complete
+	implemented	ghg_rental_direct_input	GHG emissions from business travel by rental car provided by the travel agency BCD (atm only provided for Hertz)		BCD	Testing complete
+	implemented	ghg_travel_agency_spend_input	GHG emissions from business travel by rental car calculated from cost provided by the travel agency BCD (atm used for all rental car companies besides Hertz) 	travel_agency_spend_rental_all_vendors * rental_kgco2e_sek		Testing complete
+	implemented	ghg_expense_spend_input	GHG emissions from business travel by rental car calculated from cost provided by the expense management system Rydoo (used for any vendor) 	expenses_spend_rental * rental_kgco2e_sek		Testing complete
+	implemented	rental_kgco2e_sek	Emission factor for rental cars calculated based on data from travel agency BCD	ghg_rental_direct_input / travel_agency_spend_rental_hertz		Testing complete
+	implemented	travel_agency_spend_rental_hertz	Spend on Hertz rental cars booked via the travel agency BCD		BCD	Testing complete
+	implemented	travel_agency_spend_rental_all_vendors	Spend on rental cars booked via the travel agency BCD		BCD	Testing complete
+	implemented	expenses_spend_rental	Spend on rental cars through expenses (any car rental company)		Rydoo	Testing complete
+s3 cat 7 Commute	implemented	ghg_per_fte_commute	CO2eTonne per FTE for employee commuting (would like 1 value per country)		OX2 Internal calculations	N/A
+	implemented	ghg_scope_3_cat_7	GHG emissions from employee commuting	sum(ghg_per_fte_commute*fte_total)		Testing complete
+Scope 3	implemented	ghg_scope_3	Scope 3: GHG emissions in the value chain	ghg_scope_3_cat_3 + ghg_scope_3_cat_5 + ghg_scope_3_cat_6 + ghg_scope_3_cat_7		Test later when all scope 3 categories are included in OneStream

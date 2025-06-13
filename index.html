@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://unpkg.com/papaparse@latest/papaparse.min.js"></script>
+        <script src="https://unpkg.com/d3-dag@1.1.0"></script>
+        <script src="https://unpkg.com/d3@7.9.0"></script>
+        <script type="module">
+
+            import { svgImage } from './js/svgImage.js';
+            import { Parser } from './js/parser.js';
+
+            const settings = {
+                eventProxy: document.createElement("div"),
+                zoomSpeed: 2,
+                lowLightOpacity: 0.1,
+                transitionDuration: 500,
+                columns: {
+                    id: "Name",
+                    name: "Name",
+                    formula: "Formula",
+                    uom: "UoM",
+                    source: "Source system",
+                    description: "Description",
+                    status: "Status",
+                    category: "Category"
+                },
+                ignore: {
+                    status: ["unused"]
+                },
+                dag: {
+                    nodeSize: [170, 40],
+                    nodeGap: [50, 200],
+                    flip: undefined,
+                    curve: d3.curveMonotoneY,
+                    line: undefined,
+                    builder: undefined,
+                    layout: undefined
+                },
+                multiSelect: true,
+                selectLineage: {
+                    ancestors: true,
+                    descendants: true
+                },
+                isolateSelection: false,
+                isolated: new Set(),
+                highlighted: new Set(),
+                selected: new Set(),
+                currentGraph: "phase1",
+                graphs: new Map([[   
+                    "phase1",
+                        {
+                            id: "phase1",   
+                            type: "file",
+                            path: "data/phase1.tsv",
+                            delimiter: "/t",
+                            columns: {
+                                id: "Name",
+                                name: "Name",
+                                formula: "Formula",
+                                uom: "UoM",
+                                source: "Source system",
+                                description: "Description",
+                                status: "Status",
+                                category: "Category"
+                            },
+                            ignore: {
+                                status: ["unused"]
+                            }
+                        }
+                ],[
+                    "phase2",
+                    {
+                        id: "phase2",
+                        type: "file",
+                        path: "data/phase2.tsv",
+                        delimiter: "/t",
+                        columns: {
+                            id: "Name",
+                            name: "Name",
+                            formula: "Formula",
+                            uom: "UoM",
+                            source: "Source system",
+                            description: "Description",
+                            status: "Status",
+                            category: "Category"
+                        }
+                    }
+                ]]),
+                setup() {
+                    for (const graph of this.graphs.values()) {
+                        this.addGraph(graph);
+                    }
+                    this.setupDag();
+                },
+                addGraph(graph) {
+                    graph.columns = graph.columns || this.columns;
+                    graph.ignore = graph.ignore || this.ignore;
+                    this.graphs.set(graph.id, graph);
+                    if (graph.type == "file") {
+                        fetch(graph.path)
+                            .then(response => response.text())
+                            .then(text => { 
+                                graph.data = Parser.parse(text, graph) 
+                                if (this.currentGraph == graph.id) {
+                                    drawGraph();
+                                }
+                            })
+                    }
+                    if (graph.type == "text") {
+                        graph.data = Parser.parse(graph.text, graph);
+                        this.currentGraph = graph.id;
+                        drawGraph();
+                    }
+                    this.eventProxy.dispatchEvent(new Event("change"));
+                },
+                setupDag() {
+                    this.dag.builder = d3.graphStratify().parentIds(d => d.parents.map(p => p.id));
+
+                    // set the layout functions
+                    // this truncates the edges so we can render arrows nicely
+                    const shape = d3.tweakShape(this.dag.nodeSize, d3.shapeRect);
+                    const flip = d3.tweakFlip(this.dag.flip);
+                    
+                    // use this to render our edges
+                    this.dag.line = d3.line().curve(this.dag.curve);
+
+                    this.dag.layout = d3.sugiyama()
+                        .nodeSize(this.dag.nodeSize)
+                        .gap(this.dag.nodeGap)
+                        .tweaks([shape]);
+                },
+                addEventListener(type, listener) {
+                    this.eventProxy.addEventListener(type, listener);
+                },
+            }
+            settings.setup();
+            globalThis.settings = settings;
+
+            // window.addEventListener("resize", () => image.updateLayout());
+
+            let image;
+
+            class settingsLayout {    
+
+                settings = {}
+
+                excel = document.getElementById("excel_input");
+                process = document.getElementById("excel_process");
+                graphSelect = document.getElementById("graphSelect");
+                save = document.getElementById("save");
+                isolate = document.getElementById("isolate");
+                isolateSelection = document.getElementById("isolateOnSelect");
+                includeLineage = document.getElementById("includeLineage");
+
+                constructor(settings) {
+
+                    this.settings = settings
+
+                    image = new svgImage(document.getElementById("svg"), { 
+                        zoomSpeed: settings.zoomSpeed 
+                    });
+                    image.addEventListener("click", () => {
+                        if (this.settings.selected.size > 0) {
+                            this.settings.selected.clear();
+                            drawGraph();
+                        }   
+                    })
+
+                    this.save.addEventListener("click", function(e) {
+                        image.saveSvg('output.svg');
+                    })
+                    this.isolate.addEventListener("click", e => {
+                        this.settings.isolated = new Set(this.settings.selected);
+                        drawGraph();
+                    })
+                    this.isolateSelection.addEventListener("change", e => {
+                        this.settings.isolateSelection = e.target.checked;
+                        this.settings.isolated = new Set(this.settings.selected);
+                        this.draw();
+                        drawGraph();
+                    })
+                    this.includeLineage.addEventListener("change", e => {
+                        const value = e.target.value;
+                        this.settings.selectLineage.ancestors = value == "ancestors" || value == "both";
+                        this.settings.selectLineage.descendants = value == "descendants" || value == "both";
+                        drawGraph();
+                    })
+                    this.graphSelect.addEventListener("change", e => {
+                        this.settings.currentGraph = e.target.value;
+                        drawGraph();
+                    })
+
+                    this.process.addEventListener("click", () => {
+                        this.settings.addGraph({
+                            id: 'Imported',
+                            type: 'text',
+                            text: e.target.value
+                        })
+                    });
+
+                    window.addEventListener("paste", e => {
+                        e.preventDefault();
+                        this.settings.addGraph({
+                            id: 'Pasted',
+                            type: 'text',
+                            text: e.clipboardData.getData("text/plain")
+                        })
+                    })
+
+                    this.settings.addEventListener("change", () => {
+                        this.draw();
+                    })
+
+                    this.draw();
+                }
+                draw() {
+                    this.isolate.style.display = this.settings.isolateSelection ? 
+                        "none" : "inline";
+                    this.isolateSelection.checked = this.settings.isolateSelection
+                    this.drawGraphSelect();
+
+                }
+
+                drawGraphSelect() {
+                    for (const graph of this.settings.graphs.values()) {
+                        if (this.graphSelect.querySelector(`option[value="${graph.id}"]`) === null) {
+                            const option = document.createElement("option");
+                            option.value = graph.id;
+                            option.textContent = graph.id;
+                            if (graph.id == this.settings.currentGraph) {
+                                option.selected = true;
+                            }
+                            this.graphSelect.appendChild(option);
+                        }
+                    }
+                }
+            }
+
+            function isolateNodes(nodes) {
+                if (nodes.size == 0) return;
+                const lineageNodes = getNodes(getLineages(nodes));
+                const clones = lineageNodes.values().map(node => structuredClone(node))
+                const cloneMap = new Map(clones.map(clone => [clone.id, clone]))
+                for (const clone of cloneMap.values()) {
+                    clone.parents = clone.parents.filter(parent => cloneMap.has(parent.id)).map(parent => cloneMap.get(parent.id))
+                    clone.children = clone.children.filter(child => cloneMap.has(child.id)).map(child => cloneMap.get(child.id))
+                }
+                return cloneMap
+                // settings.selected = new Set(settings.selected.values().map(node => cloneMap.get(node.id)))
+                // drawGraph([...cloneMap.values()]);
+            }
+
+
+            window.addEventListener("load", () => {
+                const layout = new settingsLayout(settings);
+            })
+
+            function getLineages(nodes) {
+                const lineages = new Set();
+                for (const node of nodes) {
+                    getLineage(node, lineages);
+                }
+                return lineages;
+            }
+            function getLineage(node, lineage) {
+                lineage.add(node.id); 
+                const { descendants, ancestors } = settings.selectLineage
+                if (descendants)
+                    addDescendants(node, lineage);
+                if (ancestors)
+                    addAncestors(node, lineage);
+            }
+            function addDescendants(node, lineage) {
+                for (const child of node.children) {
+                    lineage.add(child.id);
+                    addDescendants(child, lineage);
+                }
+            }
+            function addAncestors(node, lineage) {
+                for (const parent of node.parents) {
+                    lineage.add(parent.id);
+                    addAncestors(parent, lineage);
+                }
+            }
+
+            let graphCache = new Map();
+            let currentData;
+
+            function getNodes(idIterable) {
+                return new Set(idIterable.values().map(id => getSelectedData().get(id)))
+            }
+            function getSelectedData() {
+                return settings.graphs.get(settings.currentGraph).data;
+            }
+
+            function getDataHash(data) {
+                return [...data.values()].map(d => d.id).sort().join(",");
+            }
+
+            let drawnGraph;
+
+            function drawGraph() {
+
+                // get data
+                let graphData;
+                const selectedGraph = settings.graphs.get(settings.currentGraph);
+
+                if (settings.isolated.size > 0) {
+                    graphData = isolateNodes(getNodes(settings.isolated));
+                } else {
+                    graphData = selectedGraph.data;
+                }
+                currentData = graphData;
+
+                // get layout
+                let width, height, graph;
+                const dataHash = getDataHash(graphData);
+                if (graphCache.has(dataHash)) {
+                    ({ width, height, graph } = graphCache.get(dataHash));
+                } else {                    
+                    graph = settings.dag.builder(graphData);
+                    ({ width, height } = settings.dag.layout(graph))
+                    graphCache.set(dataHash, { width, height, graph });
+                }
+
+                // redraw image if needed
+                const svg = d3.select(image.element)
+                let trans
+                    // .tween("side-effects", () => options?.zoomFit ? zoomFit : () => {})
+                if (drawnGraph == graph) {
+                    trans = d3.transition().duration(settings.transitionDuration)
+                } else {
+                    trans = svg.transition().duration(settings.transitionDuration)
+                    image.setDimensions(width, height, { transition: trans })
+                    drawnGraph = graph;
+                }
+
+
+                // console.log(data, highlighted);
+                // global
+
+                // if (data !== undefined) {
+                //     graph = builder(data);
+                //     trans = svg.transition().duration(settings.transitionDuration)
+                //     image.setDimensions(width, height, { transition: trans })
+                //     // trans.end().then(() => {
+                //     //     zoomFit()
+                //     // })
+                // } else {
+                //     // if (settings.isolateSelection && settings.selected.size > 0) {
+                //     //     const isolated = isolateNodes(getNodes(settings.selected));
+                        
+                //     //     // settings.selected = new Set(settings.selected.values().map(node => cloneMap.get(node.id)))
+                //     // }
+                //     trans = d3.transition().duration(settings.transitionDuration)
+                // }
+                if (!graph) return;
+
+
+                const selectedNodes = getNodes(settings.selected.union(settings.highlighted))
+                const highlighted = getLineages(selectedNodes);
+
+                // ... actually render here ...
+                /*
+                for (const node of graph.nodes()) {
+                    console.log(node.x, node.y);
+                }
+                for (const { points } of graph.links()) {
+                    console.log(points);
+                }
+                    */
+
+
+                // colors
+                const steps = graph.nnodes() - 1;
+                const interp = d3.interpolateRainbow;
+                const color = d3.scaleOrdinal(d3.schemeCategory10);
+                const colorMap = new Map(
+                [...graph.nodes()]
+                    .sort((a, b) => a.y - b.y)
+                    .map((node, i) => [node.data.id, color(node.data.color)]) //interp(i / steps)])
+                );
+
+
+                // nodes
+                const getNodeOpacity = d => highlighted.size == 0 || highlighted.has(d.data.id) ? 1 : settings.lowLightOpacity
+                const tooltip = d3.select(".tooltip");
+                svg
+                .select("#nodes")
+                .selectAll("g")
+                .data(graph.nodes(), d => d.data.id)
+                .join(
+                (enter) => 
+                    enter
+                        .append("g")
+                        .attr("transform", ({ x, y }) => `translate(${x}, ${y})`)
+                        .attr("opacity", getNodeOpacity)
+                        .call((enter) => {
+                            enter
+                                .append("rect")
+                                // .attr("r", nodeRadius)
+                                .attr("x", -(settings.dag.nodeSize[0]/2))
+                                .attr("y", -(settings.dag.nodeSize[1]/2))
+                                .attr("width", settings.dag.nodeSize[0])
+                                .attr("height", settings.dag.nodeSize[1])
+                                .attr("fill", d => color(d.data.color))
+                                .attr("stroke", d => settings.selected.has(d.data.id) ? "black" : "white" )
+                                .attr("stroke-width", d => settings.selected.has(d.data.id) ? 5 : 0 );
+                            enter
+                                .append("text")
+                                .text(d => d.data.name)
+                                .attr("font-weight", "bold")
+                                .attr("font-size", "10")
+                                .attr("font-family", "sans-serif")
+                                .attr("text-anchor", "middle")
+                                .attr("alignment-baseline", "middle")
+                                .attr("fill", "white");
+                        })
+                        .on("mouseenter", function (evt, d) {
+                            // console.log(evt, "on",d)
+                            // if(d3.active(image.element)) {
+                            //     console.log("CANCELLED",evt, "on",d)
+                            //     return;
+                            // }
+                            settings.highlighted.add(d.data.id);
+                            drawGraph();
+                        })
+                        .on("click", (evt, d) => {
+                            evt.stopPropagation();
+                            if (settings.selected.has(d.data.id)) {
+                                settings.selected.delete(d.data.id);
+                            } else {
+                                if (!settings.multiSelect)
+                                    settings.selected.clear();
+                                settings.selected.add(d.data.id);
+                            }
+                            if (settings.isolateSelection) {
+                                settings.isolated = new Set(settings.selected);
+                            }
+                            drawGraph();
+                        })
+                        .on("mousemove", (evt, d) => {
+                            const [mx, my] = d3.pointer(evt);
+                            const vb = svg.attr("viewbox");
+                            // console.log(vb)
+                            let tooltipText = `
+                                <strong>id</strong>: ${d.data.id}<br> 
+                                <strong>description</strong>: ${d.data.description}<br> 
+                                <strong>unit</strong>: ${d.data.uom}<br>
+                                <strong>category:</strong>: ${d.data.color}`;
+                            if (d.data.formula)
+                                tooltipText += `<br><strong>formula</strong>: ${d.data.formula}`;
+                            if (d.data.source)
+                                tooltipText += `<br><strong>source</strong>: ${d.data.source}`;
+                            if (d.data.children.length > 0)
+                                tooltipText += `<br><strong>in formula of</strong>: <ul>${d.data.children.map(child => `<li>${child.id}</li>`).join('')}</ul>`;
+                            // console.log({node: d.y, viewbox: viewBox.y, pointer: my, scale })
+                            tooltip
+                                .style("left", `${(d.x + mx - image.viewBox.x)/image.scale + 15}px`)
+                                .style("top", `${(d.y  + my - image.viewBox.y)/image.scale+ 15}px`)
+                                .classed("hidden", false)
+                                .html(tooltipText);
+                            })
+                        .on("mouseleave", function(evt, d) {
+                            // console.log(evt, "on",d)
+                            // if(d3.active(image.element)) {
+                            //     console.log("CANCELLED",evt, "on",d)
+                            //     return;
+                            // }
+                            tooltip.classed("hidden", true)
+                            settings.highlighted.delete(d.data.id);
+                            drawGraph();
+                        }),
+                    update => { update
+                        .transition(trans)
+                        .attr("transform", ({ x, y }) => `translate(${x}, ${y})`)
+                        .attr("opacity", getNodeOpacity )
+                        .select("rect")
+                            .attr("stroke", d => settings.selected.has(d.data.id) ? "black" : "white" )
+                            .attr("fill", d => color(d.data.color))
+                            .attr("stroke-width", d => settings.selected.has(d.data.id) ? 5 : 0 )
+                    },
+                    exit => { exit
+                        .transition(trans)
+                        .attr("opacity", 0)
+                        .remove()
+                    }
+                );
+
+                // link gradients
+                svg
+                .select("#defs")
+                .selectAll("linearGradient")
+                .data(graph.links(), ({ source, target }) => `${source.data.id}--${target.data.id}`)
+                .join(
+                    enter => enter
+                        .append("linearGradient")
+                        .attr("id", ({ source, target }) =>
+                            encodeURIComponent(`${source.data.id}--${target.data.id}`)
+                        )
+                        .attr("gradientUnits", "userSpaceOnUse")
+                        .attr("x1", ({ points }) => points[0][0])
+                        .attr("x2", ({ points }) => points[points.length - 1][0])
+                        .attr("y1", ({ points }) => points[0][1])
+                        .attr("y2", ({ points }) => points[points.length - 1][1])
+                        .call((enter) => {
+                            enter
+                            .append("stop")
+                            .attr("class", "grad-start")
+                            .attr("offset", "0%")
+                            .attr("stop-color", ({ source }) => color(source.data.color));
+                            enter
+                            .append("stop")
+                            .attr("class", "grad-stop")
+                            .attr("offset", "100%")
+                            .attr("stop-color", ({ target }) => color(target.data.color));
+                        }),
+                    update => update
+                        .transition(trans)
+                        .attr("x1", ({ points }) => points[0][0])
+                        .attr("x2", ({ points }) => points[points.length - 1][0])
+                        .attr("y1", ({ points }) => points[0][1])
+                        .attr("y2", ({ points }) => points[points.length - 1][1])
+                        .call((update) => {
+                            update
+                            .select(".grad-start")
+                            .attr("stop-color", ({ source }) => color(source.data.color));
+                            update
+                            .select(".grad-stop")
+                            .attr("stop-color", ({ target }) => color(target.data.color));
+                        }),
+                    
+                );
+
+                const getLinkOpacity =  ({ source, target }) => highlighted.size == 0 || (highlighted.has(source.data.id) && highlighted.has(target.data.id)) ? 1 : settings.lowLightOpacity
+                // link paths
+                svg
+                    .select("#links")
+                    .selectAll("path")
+                    .data(graph.links(), ({ source, target }) => `${source.data.id}--${target.data.id}`)
+                    .join((enter) =>
+                        enter
+                            .append("path")
+                            .attr("d", ({ points }) => settings.dag.line(points))
+                            .attr("fill", "none")
+                            .attr("stroke-width", 3)
+                            .attr(
+                                "stroke",
+                                ({ source, target }) => `url(#${source.data.id}--${target.data.id})`
+                            )
+                            .attr("opacity", 0)
+                            .call((enter) => enter.transition(trans)
+                                .attr("opacity", getLinkOpacity)
+                            ),
+                        (update) =>
+                        update
+                            .transition(trans)
+                            .attr("opacity", getLinkOpacity)
+                            // .on("start", function repeat({ points }) {
+                            //     d3.active(this)
+                            //         .attrTween("d", pathTween(line(points), 50))
+                            //     }),
+                            .attr("d", ({ points }) => settings.dag.line(points)),
+                        (exit) => 
+                        exit
+                            .transition(trans)
+                            .attr("opacity", 0)
+                            .remove()
+
+                        
+                    );
+
+                function pathTween(d1, precision) {
+                    return function() {
+                        var path0 = this,
+                            path1 = path0.cloneNode(),
+                            n0 = path0.getTotalLength(),
+                            n1 = (path1.setAttribute("d", d1), path1).getTotalLength();
+
+                        // Uniform sampling of distance based on specified precision.
+                        var distances = [0], i = 0, dt = precision / Math.max(n0, n1);
+                        while ((i += dt) < 1) distances.push(i);
+                        distances.push(1);
+
+                        // Compute point-interpolators at each distance.
+                        var points = distances.map(function(t) {
+                        var p0 = path0.getPointAtLength(t * n0),
+                            p1 = path1.getPointAtLength(t * n1);
+                        return d3.interpolate([p0.x, p0.y], [p1.x, p1.y]);
+                        });
+
+                        return function(t) {
+                         return t < 1 ? "M" + points.map(function(p) { return p(t); }).join("L") : d1;
+                        };
+                    };
+                }
+
+                // Arrows
+                /*
+                const arrowSize = 80;
+                const arrowLen = Math.sqrt((4 * arrowSize) / Math.sqrt(3));
+                const arrow = d3.symbol().type(d3.symbolTriangle).size(arrowSize);
+                svg
+                .select("#arrows")
+                .selectAll("path")
+                .data(graph.links())
+                .join((enter) =>
+                    enter
+                    .append("path")
+                    .attr("d", arrow)
+                    .attr("fill", ({ target }) => colorMap.get(target.data.id))
+                    .attr("transform", arrowTransform)
+                    .attr("opacity", 0)
+                    .attr("stroke", "white")
+                    .attr("stroke-width", 2)
+                    // use this to put a white boundary on the tip of the arrow
+                    .attr("stroke-dasharray", `${arrowLen},${arrowLen}`)
+                    .call((enter) => enter.transition(trans).attr("opacity", 1))
+                );
+                */
+
+
+            }
+
+            /**
+ * get transform for arrow rendering
+ *
+ * This transform takes anything with points (a graph link) and returns a
+ * transform that puts an arrow on the last point, aligned based off of the
+ * second to last.
+ */
+
+// function arrowTransform({
+//   points
+// }) {
+//   const [[x1, y1], [x2, y2]] = points.slice(-2);
+//   const angle = (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI + 90;
+//   console.log(x1, x2, y1, y2, angle)
+//   return `translate(${x2}, ${y2 + 1}) rotate(${angle})`;
+// }
+
+
+
+        </script>
+        <style>
+
+html,
+body,
+#svgContainer,
+svg {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.tooltip {
+    font: sans-serif 12pt;
+    background: #eeeeeeee;
+    pointer-events: none;
+    border-radius: 2px;
+    padding: 5px;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    z-index: 1;
+  }
+  .hidden {
+    display: none;
+  }
+  ul {
+    margin-top: 0;
+    padding-top: 0;
+  }
+
+  #input {
+    position: absolute;
+    z-index: 1;
+  }
+
+  #nodes g {
+    cursor: pointer;
+  }
+
+  #excel_input, #excel_process {
+    display: none;
+  }
+
+  details {
+    display: inline-block;
+  }
+        </style>
+    </head>
+    <body>
+        <div id="input">
+            <select id="graphSelect">
+                <option disabled selected value="None">Choose a Graph or Paste from Excel</option>
+            </select><br>
+            <textarea id="excel_input"></textarea>
+            <button id="excel_process">Process Excel paste</button>
+            <button id="save">Save SVG</button><br>
+            <button id="isolate">Isolate</button><br>
+            <label for="isolateOnSelect">Isolate on Select</label>
+            <input type="checkbox" id="isolateOnSelect"><br>
+            <label for="includeLineage">Lineage</label>
+            <select id="includeLineage">
+                <option value="none">No Lineage</option>
+                <option value="ancestors">Ancestors</option>
+                <option value="descendants">Descendants</option>
+                <option value="both" selected>Both Ancestors and Descendants</option>
+            </select>
+        </div>
+        <div id="svgContainer">
+            <div class="tooltip hidden"></div>
+            <svg id="svg">
+                <g id="svgGroup">
+                    <defs id="defs" />
+                    <g id="links" />
+                    <g id="nodes" />
+                    <g id="arrows" />
+                </g>
+            </svg>
+        </div>
+    </body>
+</html>
